@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoidEngine HUD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        #logo {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+
+        #logo img {
+            height: 40px;
+            opacity: 0.9;
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            background: rgba(120, 11, 11, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px 14px;
+            min-width: 190px;
+            transition: all 0.3s ease;
+        }
+
+        .hud-item:hover {
+            background: rgba(150, 15, 15, 0.95);
+            transform: translateX(-5px);
+        }
+
+        .icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 13px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label {
+            font-size: 11px;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .value {
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+        }
+
+        #weapon {
+            display: none;
+            border-left: 3px solid #ff6b6b;
+        }
+
+        #weapon.visible {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+
+        .ammo {
+            display: flex;
+            gap: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .clip { color: #ff6b6b; }
+        .divider { color: #bdc3c7; }
+        .total { color: white; }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-left: 8px;
+            background: #2ed573;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .hud-hidden {
+            opacity: 0;
+            transform: translateX(100px);
+            pointer-events: none;
+        }
+
+        .hud-visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div id="hud" class="hud-hidden">
+        <div id="logo">
+            <img src="./img/logo.png" alt="Elite HUD" onerror="this.style.display='none'">
+        </div>
+
+        <div class="hud-item" id="id">
+            <div class="icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="content">
+                <span class="label">Player ID</span>
+                <div style="display: flex; align-items: center;">
+                    <span class="value">-</span>
+                    <div class="status-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hud-item" id="cash">
+            <div class="icon">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="content">
+                <span class="label">Cash</span>
+                <span class="value">-</span>
+            </div>
+        </div>
+
+        <div class="hud-item" id="bank">
+            <div class="icon">
+                <i class="fas fa-building-columns"></i>
+            </div>
+            <div class="content">
+                <span class="label">Bank</span>
+                <span class="value">-</span>
+            </div>
+        </div>
+
+        <div class="hud-item" id="job">
+            <div class="icon">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="content">
+                <span class="label">Job</span>
+                <span class="value">-</span>
+            </div>
+        </div>
+
+        <div class="hud-item" id="gang">
+            <div class="icon">
+                <i class="fas fa-user-ninja"></i>
+            </div>
+            <div class="content">
+                <span class="label">Gang</span>
+                <span class="value">-</span>
+            </div>
+        </div>
+
+        <div class="hud-item" id="weapon">
+            <div class="icon">
+                <i class="fas fa-gun"></i>
+            </div>
+            <div class="content">
+                <span class="label">Ammo</span>
+                <div class="ammo">
+                    <span class="clip">-</span>
+                    <span class="divider">/</span>
+                    <span class="total">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let hudData = {
+        id: '-',
+        cash: '-',
+        bank: '-',
+        job: '-',
+        gang: '-',
+        weapon: {
+            armed: false,
+            clip: '-',
+            ammo: '-'
+        }
+    };
+
+    function updateHUD() {
+        document.querySelector('#id .value').textContent = hudData.id;
+        document.querySelector('#cash .value').textContent = formatMoney(hudData.cash);
+        document.querySelector('#bank .value').textContent = formatMoney(hudData.bank);
+        document.querySelector('#job .value').textContent = hudData.job;
+        document.querySelector('#gang .value').textContent = hudData.gang;
+        
+        const weaponElement = document.getElementById('weapon');
+        if (hudData.weapon.armed) {
+            weaponElement.classList.add('visible');
+            document.querySelector('#weapon .clip').textContent = hudData.weapon.clip;
+            document.querySelector('#weapon .total').textContent = hudData.weapon.ammo;
+        } else {
+            weaponElement.classList.remove('visible');
+        }
+        
+        // Debug
+        //console.log('HUD Updated:', hudData);
+    }
+
+    function formatMoney(amount) {
+        if (amount === '-' || amount === undefined) return '-';
+        if (amount === 0) return '$0';
+        return '$' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    function toggleHUD(show) {
+        const hud = document.getElementById('hud');
+        if (show) {
+            hud.classList.remove('hud-hidden');
+            hud.classList.add('hud-visible');
+            //console.log('HUD Shown');
+        } else {
+            hud.classList.remove('hud-visible');
+            hud.classList.add('hud-hidden');
+            //console.log('HUD Hidden');
+        }
+    }
+
+    window.addEventListener('message', function(event) {
+        const data = event.data;
+        //console.log('Received:', data); // Debug all messages
+        
+        if (data.action === 'updateHUD') {
+            if (data.id !== undefined) hudData.id = data.id;
+            if (data.cash !== undefined) hudData.cash = data.cash;
+            if (data.bank !== undefined) hudData.bank = data.bank;
+            if (data.job !== undefined) hudData.job = data.job;
+            if (data.gang !== undefined) hudData.gang = data.gang;
+            updateHUD();
+        }
+        else if (data.action === 'updateID') {
+            if (data.id !== undefined) hudData.id = data.id;
+            updateHUD();
+        }
+        else if (data.action === 'updateMoney') {
+            // IMPORTANT: Handle 0 values properly
+            if (data.cash !== undefined) hudData.cash = data.cash;
+            if (data.bank !== undefined) hudData.bank = data.bank;
+            updateHUD();
+            //console.log('Money updated - Cash:', data.cash, 'Bank:', data.bank);
+        }
+        else if (data.action === 'updateJob') {
+            if (data.job !== undefined) hudData.job = data.job;
+            if (data.gang !== undefined) hudData.gang = data.gang;
+            updateHUD();
+        }
+        else if (data.action === 'updateWeapon') {
+            hudData.weapon.armed = data.armed || false;
+            if (data.clip !== undefined) hudData.weapon.clip = data.clip;
+            if (data.ammo !== undefined) hudData.weapon.ammo = data.ammo;
+            updateHUD();
+        }
+        else if (data.action === 'toggleHUD') {
+            toggleHUD(data.show);
+        }
+    });
+
+    // Initial request for data
+    fetch(`https://${window.location.hostname}/ui-ready`, {
+        method: 'POST',
+        body: JSON.stringify({})
+    });
+</script>
+</body>
+</html>
